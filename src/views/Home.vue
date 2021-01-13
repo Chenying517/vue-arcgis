@@ -1,76 +1,141 @@
 <template>
-  <div class="home" id="grcgistView"></div>
+  <div class="home">
+    <div class="menu">
+      <el-tree
+        :data="mapmenu"
+        :props="{ label: 'mapLayer' }"
+        show-checkbox
+        ref="treeMenu"
+        @check-change="_handleCheckChange"
+      >
+        <span class="tree-node" slot-scope="{ data }">
+          <span>{{ data.title }}</span>
+        </span>
+      </el-tree>
+
+      <div class="contro">
+        <a
+          @click.stop="_handleMap('point')"
+          :class="{ active: mapToolValue.point.tag }"
+          >点选</a
+        >
+        <a
+          @click.stop="_handleMap('ranging')"
+          :class="{ active: mapToolValue.ranging.tag }"
+          >测距</a
+        >
+        <a @click.stop="_handleMap('fullScreen')" class="a-fullscreen">全屏</a>
+      </div>
+    </div>
+    <div class="gis-map">
+      <gis-map
+        :clickToolValue="mapToolValue"
+        :featureLayer="flatCheckTreeNode"
+      ></gis-map>
+    </div>
+  </div>
 </template>
 <script >
-import { loadModules } from "esri-loader";
-import FeatureLayer from "./json/featureLayer.json";
+import GisMap from "@/views/map/map.vue";
+import MapMenu from "@/assets/data/mapMenu.js";
+
 export default {
+  components: {
+    "gis-map": GisMap,
+  },
   data() {
-    return {};
+    return {
+      mapmenu: MapMenu,
+      checkTreeNode: [],
+      flatCheckTreeNode: [],
+      mapToolValue: {
+        point: {
+          value: "point",
+          tag: true,
+        },
+        ranging: {
+          value: "ranging",
+          tag: false,
+        },
+        fullScreen: {
+          value: "fullScreen",
+          tag: false,
+        },
+      },
+    };
   },
-  mounted() {
-    this.createView();
-  },
+
   methods: {
-    //创建视图
-    createView() {
-      const options = {
-        url: "https://js.arcgis.com/4.15/",
-        css: "https://js.arcgis.com/4.15/esri/themes/light/main.css",
-        // url: "http://10.0.102.22/arcgisapi/dojo/dojo.js",
-        // css: "http://10.0.102.22/arcgisapi/esri/themes/light/main.css",
-      };
-
-      loadModules(
-        [
-          "esri/Map",
-          "esri/views/MapView",
-          "esri/layers/WebTileLayer",
-          "esri/layers/FeatureLayer",
-        ],
-        options
-      ).then(([Map, MapView, WebTileLayer, FeatureLayer]) => {
-        // 实例化天地图层
-        const titlelayer = new WebTileLayer({
-          urlTemplate:
-            "http://{subDomain}.tianditu.gov.cn/DataServer?T=vec_w&x={col}&y={row}&l={level}&tk=2444cd1f9f915235de07229b8d1b2d62",
-          subDomains: ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"],
-        });
-        // 天地图层标注层
-        const titlelayerPoint = new WebTileLayer({
-          urlTemplate:
-            "http://{subDomain}.tianditu.gov.cn/DataServer?T=cva_w&x={col}&y={row}&l={level}&tk=2444cd1f9f915235de07229b8d1b2d62",
-          subDomains: ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"],
-        });
-        const featureLayer = new FeatureLayer({
-          id: "00",
-          title: "编辑区域",
-          url:
-            "http://36.101.208.132:6080/arcgis/rest/services/df/dfbianjie/MapServer/0",
-          opacity: 0.6,
-          outFields: ["*"],
-        });
-
-        const map = new Map({
-          basemap: { baseLayers: [titlelayer, titlelayerPoint] },
-        });
-
-        new MapView({
-          container: "grcgistView", // Reference to the DOM node that will contain the view
-          map: map, // References the map object created in step 3
-          zoom: 10, // 基于详情放大的倍数
-          center: [108.718158, 19.03789], // 设置中心点：经纬度
-        });
-        map.add(featureLayer);
+    // 点击事件：点选、测距、全屏
+    _handleMap(type) {
+      switch (type) {
+        case "point": // 点选
+          this.mapToolValue.ranging.tag = false;
+          this.mapToolValue.point.tag = !this.mapToolValue.point.tag;
+          break;
+        case "ranging": // 测距
+          this.mapToolValue.point.tag = false;
+          this.mapToolValue.ranging.tag = !this.mapToolValue.ranging.tag;
+          break;
+        case "fullScreen": // 全屏
+          this.mapToolValue.fullScreen.tag = !this.mapToolValue.fullScreen.tag;
+          break;
+      }
+    },
+    // 点击事件：树组件被点击
+    _handleCheckChange(data) {
+      this.checkTreeNode = this.$refs.treeMenu.getCheckedNodes();
+      this.flatCheckTreeNode = [];
+      this.flatCheckNode(this.checkTreeNode);
+    },
+    // 数据处理：扁平化选择的树组件
+    flatCheckNode(checkedNode) {
+      checkedNode.forEach((item) => {
+        if (item.mapLayer) {
+          this.flatCheckTreeNode.push(item);
+        }
+        if (item.children && item.children.length > 0) {
+          this.flatCheckNode(item.children);
+        }
       });
     },
   },
 };
 </script>
 <style lang="scss">
-#grcgistView {
+.gis-map {
   position: absolute;
   height: 100%;
   width: 100%;
+}
+.menu {
+  width: 250px;
+  height: auto;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  background: #fff;
+  z-index: 10;
+  padding: 20px 10px;
+}
+.contro {
+  position: absolute;
+  top: 10px;
+  left: 300px;
+  width: max-content;
+  background: #fff;
+  height: 30px;
+  line-height: 30px;
+  a {
+    display: inline-block;
+    padding: 0 20px;
+    cursor: pointer;
+    &.active {
+      color: rgb(24, 144, 255);
+    }
+  }
+}
+.a-fullscreen:hover {
+  color: rgb(24, 144, 255);
 }
 </style>

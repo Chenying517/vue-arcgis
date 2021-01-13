@@ -11,6 +11,7 @@
   "dependencies": {
     "arcgis": "^1.0.2",
     "core-js": "^3.6.5",
+    "element-ui": "^2.14.1",
     "esri-loader": "^3.0.0",
     "vue": "^2.6.11",
     "vue-class-component": "^7.2.3",
