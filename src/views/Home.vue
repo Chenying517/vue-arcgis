@@ -6,7 +6,7 @@
         :props="{ label: 'mapLayer' }"
         show-checkbox
         ref="treeMenu"
-        @check-change="_handleCheckChange"
+        @check="_handleCheckChange"
       >
         <span class="tree-node" slot-scope="{ data }">
           <span>{{ data.title }}</span>
@@ -30,7 +30,7 @@
     <div class="gis-map">
       <gis-map
         :clickToolValue="mapToolValue"
-        :featureLayer="flatCheckTreeNode"
+        :featureLayer="checkTreeNode"
       ></gis-map>
     </div>
   </div>
@@ -83,21 +83,9 @@ export default {
       }
     },
     // 点击事件：树组件被点击
-    _handleCheckChange(data) {
-      this.checkTreeNode = this.$refs.treeMenu.getCheckedNodes();
-      this.flatCheckTreeNode = [];
-      this.flatCheckNode(this.checkTreeNode);
-    },
-    // 数据处理：扁平化选择的树组件
-    flatCheckNode(checkedNode) {
-      checkedNode.forEach((item) => {
-        if (item.mapLayer) {
-          this.flatCheckTreeNode.push(item);
-        }
-        if (item.children && item.children.length > 0) {
-          this.flatCheckNode(item.children);
-        }
-      });
+    _handleCheckChange(node, data) {
+      this.checkTreeNode = [];
+      this.checkTreeNode = this.$refs.treeMenu.getCheckedNodes(false, true);
     },
   },
 };

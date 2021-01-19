@@ -119,6 +119,7 @@ export class ArcgisServe {
       id: option.id,
       title: option.title || option.id,
       url: option.url,
+      outFields: ['*'],
       opacity: option.opacity || 0.5
 
     })
